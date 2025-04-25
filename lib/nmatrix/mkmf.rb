@@ -49,14 +49,20 @@ def find_newer_gplusplus #:nodoc:
 end
 
 def gplusplus_version
-  cxxvar = proc { |n| `#{CONFIG['CXX']} -E -dM - <#{File::NULL} | grep #{n}`.chomp.split(' ')[2] }
-  major = cxxvar.call('__GNUC__')
-  minor = cxxvar.call('__GNUC_MINOR__')
-  patch = cxxvar.call('__GNUC_PATCHLEVEL__')
+  ver = nil
+  [CONFIG['CXX'], "g++ -fdeclspec"].each do |gpp_command|
+    cxxvar = proc { |n| `#{gpp_command} -E -dM - <#{File::NULL} | grep #{n}`.chomp.split(' ')[2] }
+    major = cxxvar.call('__GNUC__')
+    minor = cxxvar.call('__GNUC_MINOR__')
+    patch = cxxvar.call('__GNUC_PATCHLEVEL__')
 
-  raise("unable to determine g++ version (match to get version was nil)") if major.nil? || minor.nil? || patch.nil?
-  ver = "#{major}.#{minor}.#{patch}"
-  puts "g++ version discovered: " + ver
+    next if major.nil? || minor.nil? || patch.nil?
+
+    ver = "#{major}.#{minor}.#{patch}"
+    puts "g++ version discovered: " + ver
+  end
+  
+  raise("unable to determine g++ version (match to get version was nil)") if ver.nil?
   ver
 end
 
